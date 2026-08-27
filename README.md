@@ -16,6 +16,24 @@ That means a few things worth knowing before you dig in:
 
 Contributions, forks, and "hey AI, add the vent system" follow-up sessions are all fair game — this was built to be a starting point, not a final cut.
 
+## The Game Idea
+
+You wake up as one of a small survival team dropped into an abandoned research/quarantine facility. Something got out. One of you already caught it — and doesn't know you know.
+
+That's the whole hook: **everyone looks the same until they act.** There's no "Impostor is red and sus" visual tell. The infected player walks, talks, and fake-works alongside everyone else, and the only way to catch them is behavior — who was near a body, who avoided cameras, who's oddly bad at a task they should know cold.
+
+**The tension comes from two clocks running against each other:**
+- The **Survivor clock**: finish the shared task bar before the facility falls apart, or catch the Zombie before it's too late.
+- The **Zombie clock**: a real cooldown between kills (no one dies "randomly" — every kill is a deliberate, risky choice by that one player), plus optional Infection Mode, where a "kill" doesn't remove a player from the game — it turns them, quietly, on a timer, so the team you thought you could trust keeps shrinking from the inside.
+
+**Design pillars that shaped every system:**
+- *Nothing is free information.* The Zombie's identity, the kill cooldown, whether a task credited "for real" — all of it lives only on the host, specifically so no client-side trick (or curious player poking at dev tools) can leak or cheat it.
+- *Every accusation should be arguable.* Evidence (body location, who reported it, camera sightings, task completion) is meant to be circumstantial, not a smoking gun — because the fun of the genre is the argument, not the reveal.
+- *Small map, frequent collisions.* Six task rooms in a tight facility mean paths cross constantly — the game is built to force interaction, not let players avoid each other for the whole round.
+- *A round should be arguable in one sentence afterward* — "the vote was tied and the real Zombie skated" is a good story; a round nobody can reconstruct isn't.
+
+That's the shape of the experience this prototype implements. Everything under "Not yet built" is about *deepening* deduction (cameras, vents-as-evidence, sabotage variety) rather than changing what the game fundamentally is.
+
 ## What's actually here
 
 This is a **working, playable core-loop prototype**, not the entire 50-section spec (that's a multi-week production effort for a small team). It's built so the architecture — server-authoritative networking, secret roles, task economy, kill/infection, meetings/voting, win conditions — is real and correct, and you can grow it toward the full design from here.
@@ -102,3 +120,22 @@ scenes/
 - **E** — interact / report a body
 - **Q** — Zombie ability (attack nearest player in range)
 - **F** — emergency meeting
+
+## How This Was Actually Built (Prompting Notes)
+
+Documenting this honestly so the team can repeat or improve on the approach:
+
+**1. One large, structured spec prompt, not a vague ask.** The starting prompt wasn't "make me an Among Us clone" — it was a ~50-section numbered design document covering role system, win/lose conditions, task types, sabotage, meeting/voting flow, map layout, networking authority model, UI style, target platforms, and explicit originality constraints ("do not copy Among Us characters/art/UI"). That level of structure is what let the AI produce a coherent, internally-consistent system on the first pass instead of a shallow demo — vague prompts get vague (or randomly-scoped) results.
+
+**2. An explicit scope-setting response before any code.** Given the size of that spec, the first move was naming what a single response could realistically deliver (a working core loop) versus what couldn't (the full 50-section production build) — and getting the highest-leverage architectural pieces right (server authority, secret roles, task crediting) rather than shallowly stubbing all 50 sections. That trade-off is called out explicitly in this README's "What's actually here" section above.
+
+**3. File-by-file generation with a real project structure.** Instead of one giant script, the AI built this as an actual Godot project — separate autoloads for state vs. networking, separate scenes per UI screen, `.tscn` files hand-authored alongside the `.gd` scripts they reference — so it opens, imports, and is human-editable exactly like a project a person would have structured.
+
+**4. Iterative, conversational follow-up for the operational stuff.** Everything after the initial build — how to actually launch the editor, how to export a `.exe`, how to find and share a local IP, how to reach friends off-network — came from follow-up prompts in plain language, including copy-pasted terminal output, so answers could be tailored to the exact Godot version and OS actually being used rather than generic instructions.
+
+**5. Docs kept in the loop, not bolted on after.** README sections (this one included) were requested and updated in the same session as the code, specifically so the documentation doesn't silently drift from what the code does — a discrepancy that already happened once and got caught this way (the player-count minimum, above).
+
+**Suggested next prompting moves**, in rough priority order for anyone continuing this:
+- Ask for one feature from "Not yet built" at a time (vents first — it's the smallest, and other systems don't depend on it) rather than asking for several at once, so each addition can be sanity-checked before the next lands on top of it.
+- Ask for a short **playtest checklist** (the exact sequence of actions to prove roles, tasks, kill/infection, meetings, and win conditions all work) before adding new systems — catches regressions early once more people are editing this.
+- If real internet play (not just LAN) becomes a priority, that's worth its own focused prompt/session rather than folding it into a feature request, since it changes the connection-setup layer described in "Networking model" above.
